@@ -1,8 +1,7 @@
-# DBRouter
-![version 0.0.1](https://img.shields.io/badge/version-0.0.1-red.svg) ![licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
+# DBRouter ![version alpha](https://img.shields.io/badge/alpha-0.0.1-red.svg) ![licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
 DBRouterはシングルファイル構成のPHP5.3+用ルーターです。PDOを利用してデータベースに直接アクセスするJSON APIを作ることができます。
 
-# 導入
+## 導入
 PHP5.3以上の環境が必要です。
 1. ルーターを使いたいディレクトリへdbrouter.phpを設置します。
 2. Apacheサーバーの場合、当該ディレクトリの.htaccessに下記を記述します。
@@ -15,7 +14,7 @@ RewriteRule . index.php [L]
 ```
 3. index.phpファイルにルーティング規則を記述していきます。
 
-# 例
+## 例
 MySQLでユーザー情報を取得する。
 ```php
 require_once 'dbrouter.php';
@@ -30,21 +29,21 @@ $router->get('/user/[:id]','SELECT * FROM user WHERE id = :id');
 exit;
 ```
 
-# ルーターの初期化
+## ルーターの初期化
 
 DBRouterを利用するにはまず、インスタンスを生成します。このとき、パラメータにルーティング基準となるパスを渡すことができます。
 
-### [例] ルートディレクトリを基準とする場合
+#### [例] ルートディレクトリを基準とする場合
 ```php
 $router = new DBRouter();
 ```
 
-### [例] apiディレクトリを基準とする場合
+#### [例] apiディレクトリを基準とする場合
 ```php
 $router = new DBRouter('/api');
 ```
 
-## PDOの設定
+### PDOの設定
 DBRouterでデータベースアクセス機能を利用する場合、pdoプロパティにPDOインスタンスを設定します。データベースアクセス機能を利用しない場合はこの作業は必要ありません。
 ```php
 $router->pdo = new PDO('...');
@@ -55,7 +54,7 @@ $pdo = new PDO('...');
 $router->pdo = $pdo;
 ```
 
-# ルーティング
+## ルーティング
 DBRouterでルーティングを行うには、getもしくはpostメソッドを利用します。getとpostの両方のリクエストを受け付けたい場合は同じパラメータ2行メソッドを書きます。
 
 ```php
@@ -64,10 +63,10 @@ public function DBRouter::get(string $route, mixed $query [, bool $end = true])
 ```php
 public function DBRouter::post(string $route, mixed $query [, bool $end = true])
 ```
-## $routeパラメータ（ルート）
+### $routeパラメータ（ルート）
 $routeにはリクエストを受け付けるスラッシュ区切りのパスとアンパサンド区切りのクエリパラメータを指定します。ここでは文字列だけでなく [...] で囲まれた[名前付きパラメータ](#名前付きパラメータ)を受け入れることができます。[名前付きパラメータ](#名前付きパラメータ)については後述します。ここではは変数と捉えてください。
 
-### 例
+#### 例
 ```php
 '/user/[:id]/profile'
 ```
@@ -76,27 +75,27 @@ $routeには、パスだけでなく受け取るクエリパラメータ（POST�
 '/product/search?[:kind]'
 ```
 
-## $queryパラメータ（クエリ）
+### $queryパラメータ（クエリ）
 $queryはSQL文、関数もしくはそれらを組み合わせた配列を指定できます。
 
-## SQL文
+### SQL文
 SQL文については[PDO::prepare](http://php.net/manual/ja/pdo.prepare.php)の記述方法に準じます。$routeで指定した[名前付きパラメータ](#名前付きパラメータ)を利用できます。
 $queryにSQL文を指定するか、配列の最後をSQL文にした場合、get/postメソッドはSQL文を実行した結果をjsonデータで出力して処理を終了します。
 
-### 例
+#### 例
 ```php
 $router->get('/user/[:id]','SELECT * FROM user WHERE id = :id');
 ```
 
-## 関数
+### 関数
 無名関数もしくは可変関数を利用できます。関数はDBRouterインスタンスにpdoプロパティを設定していなくても利用できるので、データベースにこだわらない自由なルーティングが可能です。関数は[名前付きパラメータ](#名前付きパラメータ)を$param配列で受け取ります。
-### [例] 無名関数
+#### [例] 無名関数
 ```php
 $router->get('/user/[:id]',function($param){
 	echo $param['id']->value;
 });
 ```
-### [例] 可変関数
+#### [例] 可変関数
 ```php
 $router->get('/user/[:id]','get_profile');
 
@@ -105,7 +104,7 @@ function get_profile($param) {
 }
 ```
 
-## 配列
+### 配列
 SQL文と関数を組み合わせた配列を$queryに指定できます。例えば以下の例では企業IDとして受け取った文字列から先頭の2文字を削除してからSQL文を実行します。
 ```php
 $router->get('/company/[:cid]',array('cid_filter','SELECT * FROM company WHERE cid = :cid'));
@@ -116,28 +115,28 @@ function cid_filter($param) {
 }
 ```
 
-# 名前付きパラメータ
+## 名前付きパラメータ
 ルートを記述する際に用いる [...] で囲まれた部分を**名前付きパラメータ**と呼びます。
 名前の由来はPDOの名前付きパラメータです。
 名前付きパラメータはリクエストから受け取ったパラメータをSQLに受け渡す役割を持ちます。入力値バリデーションとデフォルト値の設定が可能です。セッション値やCookie値を受け取る記法があります。
 
-## 名前付きパラメータの構成
+### 名前付きパラメータの構成
 名前付きパラメータはコロンから始まる**ネーム部**とコロンよりも前に記述する**タイプ部**とイコールから始まる**デフォルト部**から成ります。
 ただし、パスを定義するときはデフォルト値は利用できません。
 ```php
 '[type:name=default]'
 ```
 
-## ネーム部
+### ネーム部
 コロンから始まる部分をネーム部と呼びます。名前付きパラメータにおいてこの部分は必須です。
 リクエストから受け入れてPDOのSQL文に渡す名前付きパラメータの名前を定義します。
 
-## タイプ部
+### タイプ部
 コロンよりも前に記述する部分をタイプ部と呼びます。リクエストから受け入れる入力値のタイプを決めます。
 タイプは入力値をどこから受け取るか、どんな値を受け取るかを表します。
 入力値はクエリに渡される前にあらかじめ定義したバリデーションが適応され、タイプに合わない値が渡されるとルートにマッチしません。
 
-### 定義済みタイプ
+#### 定義済みタイプ
 |タイプ |効果 |
 |---|---|
 |str|どんな入力値でも受けとります。タイプ部を省略した場合、このタイプとなります。|
@@ -149,7 +148,7 @@ function cid_filter($param) {
 |env|入力値をリクエストからではなく$_ENVから受け取ります。|
 |get|入力値をPOSTリクエストの場合もリクエストパラメータから受け取ります。|
 
-### バリデーション
+#### バリデーション
 タイプはvalidメソッドを用いて新しく作ることができます。
 ```php
 public function DBRouter::type(string $name, function $valid [, string $parent = 'str'])
@@ -157,13 +156,13 @@ public function DBRouter::type(string $name, function $valid [, string $parent =
 第一引数には新しく定義するタイプ名、第二引数には入力値をとりバリデーション結果を返す関数、第三引数には基となるタイプを指定します。
 次の例は
 
-## デフォルト部
+### デフォルト部
 イコールから始まる部分をデフォルト部と呼びます。
 デフォルト部を省略した場合、その名前付きパラメータは入力値が必須となり、入力値が無いときはルートにマッチしません。
 逆にデフォルト部を記述した場合、入力値が無くてもルートにマッチして、イコールよりも後ろに記述した値がクエリに渡されます。
 また、イコールよりも後ろの値を省略してイコールのみ記述した場合、デフォルト値は空文字となります。
 
-#ライセンス
+## ライセンス
 
 MIT License
 
