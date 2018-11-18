@@ -153,7 +153,7 @@ class DBRouter {
 		if(count($step)!==count($this->request)) return false;
 
 		//各ディレクトリ名が条件に一致するか検査
-		for($i=0;$i<=count($step);$i++){
+		for($i=0;$i<count($step);$i++){
 			if(preg_match('/^\[(.*):(.+)\]$/',$step[$i],$matches)){
 				if($matches[1]==='') $matches[1] = 'str';
 				if($matches[1]==='session'||$matches[1]==='server'||$matches[1]==='cookie'||$matches[1]==='files'||$matches[1]==='env'||$matches[1]==='get') return false;
@@ -238,14 +238,14 @@ class DBRouter {
 			if(!array_key_exists($name, $params)) throw new Exception($name.' param is not found.');
 			switch($this->base_type($params[$name]['type'])){
 				case 'int':
-					$stmt->bindparam(':'.$key,$parames[$name]['value'],PDO::PARAM_INT);
+					$stmt->bindparam(':'.$name,$parames[$name]['value'],PDO::PARAM_INT);
 					break;
 				case 'session':
 				case 'server':
 				case 'cookie':
 				case 'get':
 				case 'str':
-					$stmt->bindparam(':'.$key,$params[$name]['value'],PDO::PARAM_STR);
+					$stmt->bindparam(':'.$name,$params[$name]['value'],PDO::PARAM_STR);
 					break;
 			}
 		}
