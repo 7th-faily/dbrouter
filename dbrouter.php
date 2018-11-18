@@ -113,7 +113,7 @@ class DBRouter {
 
 		// バリデーションが関数でない場合は失敗
 		if(!is_callable($valid)) return false;
-		$this->valid[$type] = array($valid,$parent);
+		$this->valid[$name] = array($valid,$parent);
 	}
 
 	/**
