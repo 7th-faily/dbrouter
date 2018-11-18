@@ -138,7 +138,7 @@ class DBRouter {
 		return true;
 	}
 	private function base_type($type) {
-		for(;$next = $this->valid[$type][1] !== '';$type = $next);
+		for(;($next = $this->valid[$type][1]) !== '';$type = $next);
 		return $type;
 	}
 
@@ -171,7 +171,7 @@ class DBRouter {
 		foreach($para as $q) {
 			if($q==='') continue;
 			if(preg_match('/^\[(.*):([_a-zA-Z][_a-zA-Z0-9]*)(=(.*))?\]$/',$q,$matches)){
-				switch(base_type($matches[1])) {
+				switch($this->base_type($matches[1])) {
 					case 'session':
 						$value = $_SESSION[$matches[2]];
 						break;
@@ -236,7 +236,7 @@ class DBRouter {
 		preg_match_all('/:([a-zA-Z][a-zA-Z0-9]*)/', $query, $matches);
 		foreach($matches[1] as $name) {
 			if(!array_key_exists($name, $params)) throw new Exception($name.' param is not found.');
-			switch(base_type($params[$name]['type'])){
+			switch($this->base_type($params[$name]['type'])){
 				case 'int':
 					$stmt->bindparam(':'.$key,$parames[$name]['value'],PDO::PARAM_INT);
 					break;
