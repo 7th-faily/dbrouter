@@ -213,16 +213,16 @@ class DBRouter {
 		if(!is_array($queries)) $queries = [$queries];
 
 		foreach($queries as $query) {
-			$param = $this->single_execute($query,$params);
+			$params = $this->single_execute($query,$params);
 		}
 
 		if($end){
 			if(!is_callable(end($queries)))
-				echo json_encode($param,JSON_UNESCAPED_UNICODE);
+				echo json_encode($params,JSON_UNESCAPED_UNICODE);
 			exit;
 		}
 
-		return $param;
+		return $params;
 	}
 	private function single_execute($query,$params) {
 
