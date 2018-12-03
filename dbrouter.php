@@ -71,7 +71,9 @@ class DBRouter {
 		if(strtolower($_SERVER['REQUEST_METHOD']) !== 'get') return false;
 
 		$params = $this->resolution(INPUT_GET,$route);
-		if($params === false) return false;
+		if($params === false)
+			if($end === true) return $this;
+			else return false;
 
 		//クエリを実行する
 		return $this->execute($query, $params, $end);
@@ -90,7 +92,9 @@ class DBRouter {
 		if(strtolower($_SERVER['REQUEST_METHOD']) !== 'post') return false;
 
 		$params = $this->resolution(INPUT_POST,$route);
-		if($params === false) return false;
+		if($params === false)
+			if($end === true) return $this;
+			else return false;
 
 		//クエリを実行する
 		return $this->execute($query, $params, $end);
@@ -113,7 +117,9 @@ class DBRouter {
 
 		// バリデーションが関数でない場合は失敗
 		if(!is_callable($valid)) return false;
+
 		$this->valid[$name] = array($valid,$parent);
+		return $this;
 	}
 
 	/**
@@ -220,9 +226,9 @@ class DBRouter {
 			if(!is_callable(end($queries)))
 				echo json_encode($params,JSON_UNESCAPED_UNICODE);
 			exit;
+		}else{
+			return $params;
 		}
-
-		return $params;
 	}
 	private function single_execute($query,$params) {
 
