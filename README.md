@@ -1,4 +1,4 @@
-# DBRouter ![version alpha](https://img.shields.io/badge/alpha-0.1.0-red.svg) ![licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
+# DBRouter ![version alpha](https://img.shields.io/badge/alpha-0.2.0-red.svg) ![licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
 DBRouterはシングルファイル構成のPHP5.3+用ルーターです。PDOを利用してデータベースに直接アクセスするJSON APIを作ることができます。
 
 ## 導入
@@ -58,10 +58,10 @@ $router->pdo = $pdo;
 DBRouterでルーティングを行うには、getもしくはpostメソッドを利用します。getとpostの両方のリクエストを受け付けたい場合は同じパラメータ2行メソッドを書きます。
 
 ```php
-public function DBRouter::get(string $route, mixed $query [, bool $end = true])
+public function DBRouter::get(string $route, mixed $query)
 ```
 ```php
-public function DBRouter::post(string $route, mixed $query [, bool $end = true])
+public function DBRouter::post(string $route, mixed $query)
 ```
 ### $route引数（ルート）
 $routeにはリクエストを受け付けるスラッシュ区切りのパスとアンパサンド区切りのクエリパラメータを指定します。ここでは文字列だけでなく [...] で囲まれた[名前付きパラメータ](#名前付きパラメータ)を受け入れることができます。[名前付きパラメータ](#名前付きパラメータ)については後述します。ここではは変数と捉えてください。
@@ -115,10 +115,9 @@ function cid_filter($param) {
 }
 ```
 
-### $end引数
-$endにはメソッドを実行した後に処理を終了するかどうかを指定します。初期値は`true`です。
-`true`の場合、ルートにマッチした時点で処理を終了して、クエリを実行します。最後のクエリ実行結果がSQL文の場合、JSON形式で出力します。ルートにマッチしなかった場合、メソッドを実行したDBRouterインスタンスを返します。これによりメソッドチェーンを実現します。
-`false`の場合、ルートにマッチしても処理を終了せず、クエリ実行結果を返します。ルートにマッチしなかった場合は`false`を返します。
+### 戻り値
+getおよびpostメソッドはルートにマッチして最後のクエリ実行結果がSQL文の場合、結果をJSON形式で出力して処理を終了します。
+ルートにマッチしなかった場合、もしくは最後のクエリがSQL文でない場合、メソッドを実行したDBRouterインスタンスを返します。これによりメソッドチェーンを実現します。
 
 ## 名前付きパラメータ
 ルートを記述する際に用いる [...] で囲まれた部分を**名前付きパラメータ**と呼びます。

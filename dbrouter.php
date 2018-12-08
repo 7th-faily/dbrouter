@@ -62,42 +62,38 @@ class DBRouter {
 	 * ルーターにgetリクエスト時の動作を登録する。
 	 * @param string $route ルーターに登録するルート条件。
 	 * @param string|function|array $query 条件に一致した場合に実行する処理内容。
-	 * @param bool $end 条件に一致してクエリが終了した後に処理を終了する場合はtrue、終了しない場合はfalseを指定する。初期値はtrue。
 	 * @return bool 条件に一致してクエリが終了したら最後に実行したクエリの戻り値、条件に一致しなかったたらfalseを返す。
 	 */
-	public function get($route,$query,$end = true) {
+	public function get($route,$query) {
 
 		//getリクエストでない場合は失敗
 		if(strtolower($_SERVER['REQUEST_METHOD']) !== 'get') return false;
 
 		$params = $this->resolution(INPUT_GET,$route);
-		if($params === false)
-			if($end === true) return $this;
-			else return false;
+		if($params !== false)
+			//クエリを実行する
+			$this->execute($query, $params);
 
-		//クエリを実行する
-		return $this->execute($query, $params, $end);
+		return $this;
 	}
 
 	/**
 	 * ルーターにPOSTリクエスト時の動作を登録する。
 	 * @param string $route ルーターに登録するルート条件。
 	 * @param string|function|array $query 条件に一致した場合に実行する処理内容。
-	 * @param bool $end 条件に一致してクエリが終了した後に処理を終了する場合はtrue、終了しない場合はfalseを指定する。初期値はtrue。
 	 * @return bool 条件に一致してクエリが終了したら最後に実行したクエリの戻り値、条件に一致しなかったたらfalseを返す。
 	 */
-	public function post($route,$query,$end = true) {
+	public function post($route,$query) {
 
 		//getリクエストでない場合は失敗
 		if(strtolower($_SERVER['REQUEST_METHOD']) !== 'post') return false;
 
 		$params = $this->resolution(INPUT_POST,$route);
-		if($params === false)
-			if($end === true) return $this;
-			else return false;
+		if($params !== false)
+			//クエリを実行する
+			$this->execute($query, $params);
 
-		//クエリを実行する
-		return $this->execute($query, $params, $end);
+		return $this;
 	}
 
 	/**
@@ -215,19 +211,16 @@ class DBRouter {
 		return $params;
 	}
 
-	private function execute($queries, $params, $end) {
+	private function execute($queries, $params) {
 		if(!is_array($queries)) $queries = [$queries];
 
 		foreach($queries as $query) {
 			$params = $this->single_execute($query,$params);
 		}
 
-		if($end){
-			if(!is_callable(end($queries)))
-				echo json_encode($params,JSON_UNESCAPED_UNICODE);
+		if(!is_callable(end($queries))){
+			echo json_encode($params,JSON_UNESCAPED_UNICODE);
 			exit;
-		}else{
-			return $params;
 		}
 	}
 	private function single_execute($query,$params) {
