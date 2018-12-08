@@ -1,4 +1,4 @@
-# DBRouter ![version alpha](https://img.shields.io/badge/alpha-0.2.0-red.svg) ![licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
+# DBRouter ![version alpha](https://img.shields.io/badge/alpha-0.3.0-red.svg) ![licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)
 DBRouterはシングルファイル構成のPHP5.3+用ルーターです。PDOを利用してデータベースに直接アクセスするJSON APIを作ることができます。
 
 ## 導入
