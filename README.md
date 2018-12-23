@@ -19,19 +19,20 @@ MySQLでユーザー情報を取得する。
 ```php
 require_once 'dbrouter.php';
 
-$router = new DBRouter('/api');
-$router->pdo = new PDO('mysql:dbname=db1;host=localhost','account','password');
+$pdo = new PDO('mysql:dbname=db1;host=localhost','account','password');
+
+$router = new DBRouter('/api', $pdo);
 
 // Request: /api/user/12
 // Return: [{"id":12;"name":"Paul"}]
-$router->get('/user/[:id]','SELECT * FROM user WHERE id = :id');
+$router->get('/user/[:id]', 'SELECT * FROM user WHERE id = :id');
 
 exit;
 ```
 
 ## ルーターの初期化
 
-DBRouterを利用するにはまず、インスタンスを生成します。このとき、パラメータにルーティング基準となるパスを渡すことができます。
+DBRouterを利用するにはまず、インスタンスを生成します。このとき、パラメータにルーティング基準ととなるパスと、PDOインスタンスを渡すことができます。
 
 #### [例] ルートディレクトリを基準とする場合
 ```php
@@ -43,15 +44,16 @@ $router = new DBRouter();
 $router = new DBRouter('/api');
 ```
 
-### PDOの設定
-DBRouterでデータベースアクセス機能を利用する場合、pdoプロパティにPDOインスタンスを設定します。データベースアクセス機能を利用しない場合はこの作業は必要ありません。
+#### [例] ルートディレクトリを基準としてPDOを用いる場合
 ```php
-$router->pdo = new PDO('...');
+$router = new DBRouter(new PDO('...'));
 ```
-PDOインスタンスはDBRouter以外でも利用することが多いため、グローバル変数に入れておくほうが使いやすいかもしれません。
+
+## PDOの設定
+DBRouterでデータベースアクセス機能を利用する場合、コンストラクタもしくはpdoメソッドでPDOインスタンスを設定します。データベースアクセス機能を利用しない場合はこの作業は必要ありません。
 ```php
 $pdo = new PDO('...');
-$router->pdo = $pdo;
+$router->pdo($pdo);
 ```
 
 ## ルーティング
@@ -93,6 +95,7 @@ $router->get('/user/[:id]','SELECT * FROM user WHERE id = :id');
 ```php
 $router->get('/user/[:id]',function($param){
 	echo $param['id']->value;
+	exit;
 });
 ```
 #### [例] 可変関数
@@ -101,6 +104,7 @@ $router->get('/user/[:id]','get_profile');
 
 function get_profile($param) {
 	echo $param['id']->value;
+	exit;
 }
 ```
 
@@ -152,19 +156,26 @@ getおよびpostメソッドはルートにマッチして最後のクエリ実�
 |env|入力値をリクエストからではなく$_ENVから受け取ります。|
 |get|入力値をPOSTリクエストの場合もリクエストパラメータから受け取ります。|
 
-#### バリデーション
-タイプはvalidメソッドを用いて新しく作ることができます。
+#### タイプ定義
+タイプはtypeメソッドを用いて新しく作ることができます。
 ```php
 public function DBRouter::type(string $name, function $valid [, string $parent = 'str'])
 ```
 第一引数には新しく定義するタイプ名、第二引数には入力値をとりバリデーション結果を返す関数、第三引数には基となるタイプを指定します。
-メソッドが成功するとメソッドを実行したDBRouterインスタンスを返します。これによりメソッドチェーンを実現します。メソッドが失敗すると`false`を返します。
+戻り値はDBRouterインスタンスを返します。これによりメソッドチェーンを実現します。
 
 ### デフォルト部
 イコールから始まる部分をデフォルト部と呼びます。
 デフォルト部を省略した場合、その名前付きパラメータは入力値が必須となり、入力値が無いときはルートにマッチしません。
 逆にデフォルト部を記述した場合、入力値が無くてもルートにマッチして、イコールよりも後ろに記述した値がクエリに渡されます。
 また、イコールよりも後ろの値を省略してイコールのみ記述した場合、デフォルト値は空文字となります。
+
+### 省略記法
+ネーム部とタイプ部は同じ名称になることがあります。
+`[id:id]`や`[name:name=]`など。
+これらは省略して以下のように記述できます。
+`[id]`  `[name=]`
+
 
 ## ライセンス
 

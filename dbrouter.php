@@ -30,19 +30,22 @@ SOFTWARE.
 class DBRouter {
 	private $request = array();
 	private $valid = array();
-
-	/**
-	 * @var データベースアクセスに利用するPHP Data Objects
-	 * @link http://php.net/manual/ja/book.pdo.php PDOのマニュアル。
-	 */
-	public $pdo = null;
+	private $db = null;
 
 	/**
 	 * 新しくルーターを作る。
-	 * @base_path 基準パスを登録する。指定しなかった場合基準パスはルートパスとなる。
+	 * @param mix1 使用するPDOインスタンスを指定する。
+	 * @param pdo 使用するPDOインスタンスを指定する。
 	 */
-	public function __construct($base_path = '') {
+	public function __construct($mix1 = null, $pdo = null) {
+		if(is_string($mix1)) $base_path = $mix1;
+		else {
+			$this->db = $mix1;
+			$base_path = '';
+		}
+		if($pdo) $this->db = $pdo;
 
+		//ルートパスを基準パスとする
 		$url = explode('?',$_SERVER['REQUEST_URI']);
 		$this->request = explode('/',substr($url[0],strlen($base_path)));
 
@@ -59,10 +62,36 @@ class DBRouter {
 	}
 
 	/**
+	 * PDOインスタンスを登録する。
+	 * @link http://php.net/manual/ja/book.pdo.php PDOのマニュアル。
+	 * @param pdo PDOインスタンス。
+	 * @return bool 呼び出したインスタンスを返す。pdoパラメータに何も指定しない場合、設定しているPDOインスタンスを返す。
+	 */
+	public function pdo($pdo = null) {
+		if($pdo!==null){
+			$this->db = $pdo;
+			return $this;
+		}else{
+			return $this->db;
+		}
+	}
+
+	/**
+	 * 基準パスを登録する。
+	 * @param base_path 基準パス。
+	 * @return bool 呼び出したインスタンスを返す。
+	 */
+	public function base($base_path) {
+		$url = explode('?',$_SERVER['REQUEST_URI']);
+		$this->request = explode('/',substr($url[0],strlen($base_path)));
+		return $this;
+	}
+
+	/**
 	 * ルーターにgetリクエスト時の動作を登録する。
 	 * @param string $route ルーターに登録するルート条件。
 	 * @param string|function|array $query 条件に一致した場合に実行する処理内容。
-	 * @return bool 条件に一致してクエリが終了したら最後に実行したクエリの戻り値、条件に一致しなかったたらfalseを返す。
+	 * @return bool 呼び出したインスタンスを返す。
 	 */
 	public function get($route,$query) {
 
@@ -81,7 +110,7 @@ class DBRouter {
 	 * ルーターにPOSTリクエスト時の動作を登録する。
 	 * @param string $route ルーターに登録するルート条件。
 	 * @param string|function|array $query 条件に一致した場合に実行する処理内容。
-	 * @return bool 条件に一致してクエリが終了したら最後に実行したクエリの戻り値、条件に一致しなかったたらfalseを返す。
+	 * @return bool 呼び出したインスタンスを返す。
 	 */
 	public function post($route,$query) {
 
@@ -101,7 +130,7 @@ class DBRouter {
 	 * @param string $name 登録するタイプ名。
 	 * @param function $valid 成功したらtrue、失敗したらfalseを返す関数。
 	 * @param string $parent 親とするバリデーション名。初期値は'str'。
-	 * @return bool 成功したらtrue、失敗したらfalseを返す。
+	 * @return bool 呼び出したインスタンスを返す。
 	 */
 	public function type($name, $valid, $parent = 'str') {
 
@@ -144,6 +173,15 @@ class DBRouter {
 		return $type;
 	}
 
+	private function name_param($q) {
+		if(preg_match('/^\[([_a-zA-Z][_a-zA-Z0-9]*)(=(.*))?\]$/',$q,$matches)){
+			$sec = array('type'=>$matches[1], 'name'=>$matches[1], 'init'=>$matches[2], 'data'=>$matches[3]);
+		}else if(preg_match('/^\[(.*):([_a-zA-Z][_a-zA-Z0-9]*)(=(.*))?\]$/',$q,$matches) || preg_match('/^(.*):([_a-zA-Z][_a-zA-Z0-9]*)(=(.*))?$/',$q,$matches)){
+			if($matches[1]==='') $matches[1] = 'str';
+			$sec = array('type'=>$matches[1], 'name'=>$matches[2], 'init'=>$matches[3], 'data'=>$matches[4]);
+		}
+		return isset($sec)?$sec:false;
+	}
 
 	private function resolution($method,$route) {
 		$cond = explode('?',$route);
@@ -156,13 +194,14 @@ class DBRouter {
 
 		//各ディレクトリ名が条件に一致するか検査
 		for($i=0;$i<count($step);$i++){
-			if(preg_match('/^\[(.*):(.+)\]$/',$step[$i],$matches)){
-				if($matches[1]==='') $matches[1] = 'str';
-				if($matches[1]==='session'||$matches[1]==='server'||$matches[1]==='cookie'||$matches[1]==='files'||$matches[1]==='env'||$matches[1]==='get') return false;
+			if($sec = $this->name_param($step[$i])){
+				if($sec['init']) return false; //初期値は無し
+				$base = $this->base_type($sec['type']);
+				if($base==='session'||$base==='server'||$base==='cookie'||$base==='files'||$base==='env'||$base==='get') return false;
 
 				// バリデーション
 				if($this->run_valid($matches[1], $this->request[$i]))
-					$params[$matches[2]] = array('type'=>$matches[1], 'value'=>$this->request[$i]);
+					$params[$sec['name']] = array('type'=>$sec['type'], 'value'=>$this->request[$i]);
 				else return false;
 			}else{
 				if($step[$i]!==$this->request[$i]) return false;
@@ -172,36 +211,34 @@ class DBRouter {
 		//クエリパラメータの条件に一致するか検査
 		foreach($para as $q) {
 			if($q==='') continue;
-			if(preg_match('/^\[(.*):([_a-zA-Z][_a-zA-Z0-9]*)(=(.*))?\]$/',$q,$matches)){
-				switch($this->base_type($matches[1])) {
+			if($sec = $this->name_param($q)){
+				switch($this->base_type($sec['type'])) {
 					case 'session':
-						$value = $_SESSION[$matches[2]];
+						$value = $_SESSION[$sec['name']];
 						break;
 					case 'server':
-						$value = filter_input(INPUT_SERVER,$matches[2]);
+						$value = filter_input(INPUT_SERVER,$sec['name']);
 						break;
 					case 'cookie':
-						$value = filter_input(INPUT_COOKIE,$matches[2]);
+						$value = filter_input(INPUT_COOKIE,$sec['name']);
 						break;
 					case 'env':
-						$value = filter_input(INPUT_ENV,$matches[2]);
+						$value = filter_input(INPUT_ENV,$sec['name']);
 						break;
 					case 'get':
-						$value = filter_input(INPUT_GET,$matches[2]);
+						$value = filter_input(INPUT_GET,$sec['name']);
 						break;
-					case '':
-						$matches[1] = 'str';
 					default:
-						$value = filter_input($method,$matches[2]);
+						$value = filter_input($method,$sec['name']);
 						break;
 				}
 				if($value==null)
-					if($matches[3]) $value = $matches[4];
+					if($sec['init']) $value = $sec['data'];
 					else return false; //必須パラメータ
 
 				// バリデーション
-				if($this->run_valid($matches[1], $value))
-					$params[$matches[2]] = array('type'=>$matches[1], 'value'=>$value);
+				if($this->run_valid($sec['type'], $value))
+					$params[$sec['name']] = array('type'=>$sec['type'], 'value'=>$value);
 				else return false;
 			}else{
 				return false; //記載エラー
@@ -231,7 +268,7 @@ class DBRouter {
 		}
 
 		//DBクエリのとき
-		$stmt = $this->pdo->prepare($query);
+		$stmt = $this->db->prepare($query);
 		preg_match_all('/:([a-zA-Z][a-zA-Z0-9]*)/', $query, $matches);
 		foreach($matches[1] as $name) {
 			if(!array_key_exists($name, $params)) throw new Exception($name.' param is not found.');
